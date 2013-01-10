@@ -2,8 +2,24 @@
 
 . "$plugin_dir/java/functions"
 
+default_java_version=1.7
+
 catalina_base=$app_dir/server
 tomcat7_dir=$app_dir/tomcat7
+
+find_java() {
+    _version=$(metadata java_version $default_java_version)
+    case "$_version" in
+        "1.6") echo "/opt/java6/bin/java";;
+        "1.7") echo "/opt/java7/bin/java";;
+        "1.8") echo "/opt/java8/jre/bin/java";;
+	"system") which java;;
+        *)
+	    echo "Unsupported java version $_version" 1>&2
+	    return 1
+	    ;;
+    esac
+}
 
 create_app_skel() {
     echo "Creating application skeleton at $app_dir"
