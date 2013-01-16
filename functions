@@ -7,18 +7,46 @@ default_java_version=1.7
 catalina_base=$app_dir/server
 tomcat7_dir=$app_dir/tomcat7
 
-find_java() {
-    _version=$(metadata java_version $default_java_version)
-    case "$_version" in
-        "1.6") echo "/opt/java6/bin/java";;
-        "1.7") echo "/opt/java7/bin/java";;
-        "1.8") echo "/opt/java8/jre/bin/java";;
-	"system") which java;;
-        *)
-	    echo "Unsupported java version $_version" 1>&2
-	    return 1
-	    ;;
-    esac
+function find_java {
+	_version=$(metadata java_version $default_java_version)
+	
+	javaExeToUse="empty"	
+
+    	for javaExe in `find / -iname java -print 2>/dev/null | gawk '{print $0}'` ] ; do
+		
+		if [ -f "$javaExe" ]
+		then
+			if [ -x "$javaExe" ]
+			then
+				currentJavaVersionQueryFullOuput=`$javaExe -version 2>&1 | gawk '{print $0}'`
+
+				#echo $currentJavaVersionQueryFullOuput
+				mkfifo currentJavaVersionQueryFullOuputPipe
+				echo $currentJavaVersionQueryFullOuput > currentJavaVersionQueryFullOuputPipe &  
+				while read -r line; do
+					currentJavaVersion=`echo $line | grep -o '^java version .*' | sed -rn 's/java\sversion\s\"([0-9]\.[0-9])\.[0-9][\_[0-9]+]{0,1}\".*/\1/p' | gawk '{print $0}'`
+
+					if [ "$_version" = "$currentJavaVersion" ]
+					then
+						if [ "empty" = "$javaExeToUse" ]
+						then
+							javaExeToUse="$javaExe"
+						fi
+					fi
+				done < currentJavaVersionQueryFullOuputPipe
+				rm currentJavaVersionQueryFullOuputPipe
+			fi
+		fi
+	    
+	done
+	
+	if [ "empty" = "$javaExeToUse" ]
+	then
+		echo "Unsupported java version $_version" 1>&2
+		return 1
+	fi
+
+	echo $javaExeToUse
 }
 
 create_app_skel() {

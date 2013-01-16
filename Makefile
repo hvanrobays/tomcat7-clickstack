@@ -23,7 +23,7 @@ lib/tomcat7.zip:
 	cd lib/apache-tomcat-$(tomcat7_ver); zip -r ../tomcat7.zip *
 	rm -rf lib/apache-tomcat-$(tomcat7_ver)
 
-java_plugin_gitrepo = git://github.com/CloudBees-community/java-clickstack.git
+java_plugin_gitrepo = http://github.com/CloudBees-community/java-clickstack.git
 
 java:
 	git clone $(java_plugin_gitrepo) java
